@@ -40,6 +40,9 @@ class DukhoolWaqt {
   const defaultLng = 39.770508;
   const defaultZone = 3; // GMT + 3
 
+  // The sun's altitude at sunrise and sunset
+  const sunset = 0.8333;
+
   // Altitudes of the sun used to adjust times for extreme latitudes
   const sunAltitude1 = -21;
   const sunAltitude2 = 1;
@@ -159,31 +162,31 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     switch ($methodID) {
       case 0: // Karachi
         $settings['angle']['fajr'] = 18;
-        $settings['angle']['maghrib'] = 0.8333;
+        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 18;
         $settings['ishaMinutes'] = 0;
         break;
       case 1: // ISNA (Islamic Society of North America)
         $settings['angle']['fajr'] = 15;
-        $settings['angle']['maghrib'] = 0.8333;
+        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 15;
         $settings['ishaMinutes'] = 0;
         break;
       case 2: // MWL (Muslim World League)
         $settings['angle']['fajr'] = 18;
-        $settings['angle']['maghrib'] = 0.8333;
+        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 17;
         $settings['ishaMinutes'] = 0;
         break;
       case 3: // Makkah (Umm al Quraa)
         $settings['angle']['fajr'] = 19;
-        $settings['angle']['maghrib'] = 0.8333;
-        $settings['angle']['isha'] = 0;
+        $settings['angle']['maghrib'] = self::sunset;
+        $settings['angle']['isha'] = self::sunset;
         $settings['ishaMinutes'] = 90;
         break;
       case 4: // Egypt
         $settings['angle']['fajr'] = 19.5;
-        $settings['angle']['maghrib'] = 0.8333;
+        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 17.5;
         $settings['ishaMinutes'] = 0;
         break;
