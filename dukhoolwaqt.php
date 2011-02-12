@@ -162,31 +162,26 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     switch ($methodID) {
       case 0: // Karachi
         $settings['angle']['fajr'] = 18;
-        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 18;
         $settings['ishaMinutes'] = 0;
         break;
       case 1: // ISNA (Islamic Society of North America)
         $settings['angle']['fajr'] = 15;
-        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 15;
         $settings['ishaMinutes'] = 0;
         break;
       case 2: // MWL (Muslim World League)
         $settings['angle']['fajr'] = 18;
-        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 17;
         $settings['ishaMinutes'] = 0;
         break;
       case 3: // Makkah (Umm al Quraa)
         $settings['angle']['fajr'] = 19;
-        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = self::sunset;
         $settings['ishaMinutes'] = 90;
         break;
       case 4: // Egypt
         $settings['angle']['fajr'] = 19.5;
-        $settings['angle']['maghrib'] = self::sunset;
         $settings['angle']['isha'] = 17.5;
         $settings['ishaMinutes'] = 0;
         break;
@@ -344,7 +339,7 @@ NULL)) {
 
   private function shurooq($basetime) {
     $shurooq = $this->midday($basetime);
-    $angle = deg2rad($this->calcSettings['angle']['maghrib']);
+    $angle = deg2rad(self::sunset);
     $shurooq -= $this->sunTime($angle, $shurooq);
     $shurooq -= $this->eot($shurooq);
    return $shurooq;
@@ -368,7 +363,7 @@ NULL)) {
 
   private function maghrib($basetime) {
     $maghrib = $this->midday($basetime);
-    $angle = deg2rad($this->calcSettings['angle']['maghrib']);
+    $angle = deg2rad(self::sunset);
     $maghrib += $this->sunTime($angle, $maghrib);
     $maghrib -= $this->eot($maghrib);
     return $maghrib;
