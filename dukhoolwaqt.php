@@ -376,6 +376,7 @@ NULL)) {
     $angle = deg2rad($this->calcSettings['angle']['isha']);
     $isha += $this->sunTime($angle, $isha);
     $isha -= $this->eot($isha);
+    $isha += $this->calcSettings['ishaMinutes'] * 60;
     return $isha;
   }
 
