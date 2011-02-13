@@ -41,7 +41,7 @@ class DukhoolWaqt {
   const defaultZone = 3; // GMT + 3
 
   // The sun's altitude at sunrise and sunset
-  const sunset = 0.8333;
+  const sunset = -0.8333;
 
   // Altitudes of the sun used to adjust times for extreme latitudes
   const sunAltitude1 = -21;
@@ -161,28 +161,28 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     $settings =& $this->calcSettings; // Reference class calcSettings array
     switch ($methodID) {
       case 0: // Karachi
-        $settings['angle']['fajr'] = 18;
-        $settings['angle']['isha'] = 18;
+        $settings['angle']['fajr'] = -18;
+        $settings['angle']['isha'] = -18;
         $settings['ishaMinutes'] = 0;
         break;
       case 1: // ISNA (Islamic Society of North America)
-        $settings['angle']['fajr'] = 15;
-        $settings['angle']['isha'] = 15;
+        $settings['angle']['fajr'] = -15;
+        $settings['angle']['isha'] = -15;
         $settings['ishaMinutes'] = 0;
         break;
       case 2: // MWL (Muslim World League)
-        $settings['angle']['fajr'] = 18;
-        $settings['angle']['isha'] = 17;
+        $settings['angle']['fajr'] = -18;
+        $settings['angle']['isha'] = -17;
         $settings['ishaMinutes'] = 0;
         break;
       case 3: // Makkah (Umm al Quraa)
-        $settings['angle']['fajr'] = 19;
+        $settings['angle']['fajr'] = -19;
         $settings['angle']['isha'] = self::sunset;
         $settings['ishaMinutes'] = 90;
         break;
       case 4: // Egypt
-        $settings['angle']['fajr'] = 19.5;
-        $settings['angle']['isha'] = 17.5;
+        $settings['angle']['fajr'] = -19.5;
+        $settings['angle']['isha'] = -17.5;
         $settings['ishaMinutes'] = 0;
         break;
     }
@@ -442,7 +442,7 @@ NULL)) {
     $sunTime = 0;
     for ($i = 0; $i < 2; $i++) { // 2 iterations are much more accurate than 1
       $D = $this->declination($time + $sunTime);
-      $sunTime = acos((sin(-$angle) - sin($D) * sin($B)) / (cos($D) * cos($B)));
+      $sunTime = acos((sin($angle) - sin($D) * sin($B)) / (cos($D) * cos($B)));
       $sunTime *= 43200 / M_PI;
     }
     return $sunTime;
