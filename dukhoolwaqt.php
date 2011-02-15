@@ -43,9 +43,10 @@ class DukhoolWaqt {
   // The sun's altitude at sunrise and sunset
   const sunset = -0.8333;
 
-  // Altitudes of the sun used to adjust times for extreme latitudes
-  const sunAltitude1 = -21;
-  const sunAltitude2 = 1;
+  // Extreme latitudes adjustment constants
+  const overhead = 0.05;
+  const latitudeUpper = 0;
+  const errorMargin = .1;
 
   // Used to compute sidereal time
   const earthSrt1 = 6.697374558;
@@ -81,7 +82,6 @@ class DukhoolWaqt {
     'angle' => array(
       'fajr' => NULL,
       'asr' => NULL, // A factor rather than an angle, here for convenience
-      'maghrib' => NULL,
       'isha' => NULL,
     ),
     'ishaMinutes' => NULL,
@@ -298,32 +298,58 @@ NULL)) {
     $dhohr = $this->dhohr($basetime);
     $latitude = $this->latitude;
 
-    if ($this->sunAltitude($midnight) > self::sunAltitude1) {
-      echo 'Alt night before: ' . $this->sunAltitude($midnight) . '<br/>';
-      $this->latitude = $this->alt2lat(self::sunAltitude1, $midnight);
-      echo 'midnight: ' . $this->latitude . '<br/>';
-      echo 'Alt night: ' . $this->sunAltitude($midnight) . '<br/>';
-      echo 'Alt day: ' . $this->sunAltitude($dhohr) . '<br/>';
-    }
-    if ($this->sunAltitude($dhohr) < self::sunAltitude2) {
-      echo 'Alt day before: ' . $this->sunAltitude($dhohr) . '<br/>';
-      $this->latitude = $this->alt2lat(self::sunAltitude2, $dhohr);
-      echo 'midday: ' . $this->latitude . '<br/>';
-      echo 'Alt night: ' . $this->sunAltitude($midnight) . '<br/>';
-      echo 'Alt day: ' . $this->sunAltitude($dhohr) . '<br/>';
+    $upper = self::latitudeUpper;
+    $lower = min($this->calcSettings['angle']);
+    $diff = $upper - $lower;
+    $upper += $diff * self::overhead;
+    $lower -= $diff * self::overhead;
+
+    $latitude = $this->latitude;
+    $fallback = FALSE;
+    $nightLat = $this->sunAltitude($midnight);
+    $dayLat = $this->sunAltitude($dhohr);
+    if ($nightLat > $lower || $dayLat < $upper) {
+      $adjust = max($nightLat - $lower, $upper - $dayLat);
+      if (abs($latitude) < $adjust) {
+	$fallback = TRUE;
+      }
+      else {
+	$adjust *= ($latitude > 0) ? 1 : -1;
+	$this->latitude -= $adjust;
+	$fallback = ($this->sunAltitude($midnight) - $lower > self::errorMargin
+|| $upper - $this->sunAltitude($dhohr) > self::errorMargin);
+      }
     }
 
-    $times = array(
-      $basetime,
-      $this->fajr($basetime) + $this->calcSettings['adjustMins']['fajr'],
-      $this->shurooq($basetime) + $this->calcSettings['adjustMins']['shurooq'],
-      $dhohr + $this->calcSettings['adjustMins']['dhohr'],
-      $this->asr($basetime) + $this->calcSettings['adjustMins']['asr'],
-      $this->maghrib($basetime) + $this->calcSettings['adjustMins']['maghrib'],
-      $this->isha($basetime) + $this->calcSettings['adjustMins']['isha'],
-    );
-
+    if ($fallback) {
+      $times = array(
+	$basetime,
+	$dhohr - (90 - $this->calcSettings['angle']['fajr']) * 240,
+	$dhohr - (90 - self::sunset) * 240,
+	$dhohr,
+	$dhohr + atan($this->calcSettings['angle']['asr'] + 1) / M_PI * 43200,
+	$dhohr + (90 - self::sunset) * 240,
+	$dhohr + (90 - $this->calcSettings['angle']['isha']) * 240,
+      );
+    }
+    else {
+      $times = array(
+        $basetime,
+        $this->fajr($basetime),
+        $this->shurooq($basetime),
+        $dhohr,
+        $this->asr($basetime),
+        $this->maghrib($basetime),
+        $this->isha($basetime),
+      );
+    }
     $this->latitude = $latitude;
+
+    $adjustMins = array_values($this->calcSettings['adjustMins']);
+    for ($i = 0; $i < 6; $i++) {
+      $times[$i + 1] += $adjustMins[$i] * 60;
+    }
+
     return $times;
   }
 
@@ -355,7 +381,7 @@ NULL)) {
     $asr = $this->midday($basetime);
     $D = $this->declination($asr);
     $F = $this->calcSettings['angle']['asr'] + 1;
-    $angle = -$this->acot2($F + tan(deg2rad($this->latitude) - $D));
+    $angle = $this->acot2($F + tan(deg2rad($this->latitude) - $D));
     $asr += $this->sunTime($angle, $asr);
     $asr -= $this->eot($asr);
     return $asr;
