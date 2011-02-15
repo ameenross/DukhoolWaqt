@@ -527,30 +527,6 @@ NULL)) {
     return $Ls;
   }
 
-  // Returns latitude where sun will reach the specified altitude
-  private function alt2lat($h, $time) {
-    $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
-
-    $c = sin(deg2rad($h));
-    $Ds = $this->declination($time);
-    $H = deg2rad($this->meanSiderealTime($time) * 15) -
-      $this->rightAscension($T);
-
-    $a = sin($Ds);
-    $b = cos($Ds) * cos($H);
-
-    $phi = asin($b / sqrt(pow($a, 2) + pow($b, 2)));
-    echo 'a: ' . $a . '; b: ' . $b . '; c: ' . $c . '; phi: ' . $phi . '<br/>';
-    ($a * $c > 0) ? $phi = M_PI - $phi : NULL;
-
-    $B = asin($c / sqrt(pow($a, 2) + pow($b, 2))) - $phi;
-    $B -= floor(($B + M_PI_2) / M_PI) * M_PI;
-    echo 'Lat: ' . rad2deg($B) . '<br/>';
-    ($B * $this->latitude < 0) ? $B *= -1 : NULL;
-
-    return rad2deg($B);
-  }
-
   // Date / time ==============================================================
 
   // Unix timestamp to Julian date
