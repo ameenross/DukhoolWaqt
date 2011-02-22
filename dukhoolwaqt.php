@@ -71,6 +71,9 @@ class DukhoolWaqt {
   const unixEpochJD = 2440587.500761306; // Unix epoch (1970/1/1 0:00 UTC)
   const J2000EpochJD = 2451545; // J2000 epoch (2000/1/1 12:00 TT)
 
+  // Misc constants
+  const defaultAccuracy = 2;
+
   // Variables (to set) =======================================================
 
   private $longitude = NULL;
@@ -291,6 +294,11 @@ NULL)) {
     return $this->sunAzimuth($time);
   }
 
+  function getMoonAzimuth($time = NULL) {
+    !is_int($time) ? $time = time() : NULL;
+    return $this->moonAzimuth($time, self::defaultAccuracy);
+  }
+
   function getTimes($time = NULL) {
     !is_int($time) ? $time = time() : NULL;
     $basetime = $this->basetime($time);
@@ -404,9 +412,6 @@ NULL)) {
     return $isha;
   }
 
-  // High latency correction ==================================================
-
-
   // Astronomy ================================================================
 
   private function qiblaAzimuth() {
@@ -460,9 +465,6 @@ NULL)) {
     return $h;
   }
 
-  private function moonAzimuth($time) {
-  }
-
   private function sunTime($angle, $time) {
     $B = deg2rad($this->latitude);
     $sunTime = 0;
@@ -472,6 +474,107 @@ NULL)) {
       $sunTime *= 43200 / M_PI;
     }
     return $sunTime;
+  }
+
+  private function moonAzimuth($time, $accuracy) {
+    $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
+    $d = $this->unix2JD($time) - self::J2000EpochJD;
+    $T = ($d + 1.5) / 36525; //We must do this due to an error in the algorithm
+
+    if (!is_int($accuracy) || $accuracy < 0 || $accuracy > 3) {
+      $accuracy = self::defaultAccuracy;
+    }
+
+    // The moon's orbital elements (these are actually 1.5 days off!!)
+    $N = 2.183805 - 33.7570736 * $T;
+    $i = 0.089804;
+    $w = 5.551254 + 104.7747539 * $T;
+    $a = 60.2666;
+    $e = 0.054900;
+    $M = 2.013506 + 8328.69142630 * $T;
+
+    $E = $M + $e * sin($M) * (1 + $e * cos($M));
+
+    if ($accuracy > 0) {
+      for ($z = 0; $z < 9 && (abs($delta) > 0.000001 || !isset($delta)); $z++) {
+	$delta = $E - $e * sin($E) - $M;
+	$delta /= 1 - $e * cos($E);
+	$E -= $delta;
+      }
+    }
+
+    $xv = $a * (cos($E) - $e);
+    $yv = $a * sqrt(1 - $e * $e) * sin($E);
+    $v = atan2($yv, $xv);
+    $r = sqrt($xv * $xv + $yv * $yv);
+
+    $xg = $r * (cos($N) * cos($v + $w) - sin($N) * sin($v + $w) * cos($i));
+    $yg = $r * (sin($N) * cos($v + $w) + cos($N) * sin($v + $w) * cos($i));
+    $zg = $r * sin($v + $w) * sin($i);
+
+    // If high accuracy is required, compute perbutations
+    if ($accuracy > 1) {
+      $mLat = atan2($zg, sqrt($xg * $xg + $yg * $yg));
+      $mLon = atan2($yg, $xg);
+
+      // Again, these are probably 1.5 days off!!
+      $Ms = 4.468863 + 628.3019404 * $T;
+      //$Ls = 4.938242 + .0300212 * $T + $Ms;
+
+      $Ls = $this->sunTrueLongitude($T);
+
+      $Lm = $N + $w + $M;
+      $D = $Lm - $Ls;
+      $F = $Lm - $N;
+
+      $mLat -= .003019 * sin($F - 2 * $D);
+      if ($accuracy > 2) {
+	$mLat -= .00096 * sin($M - $F - 2 * $D);
+	$mLat -= .00080 * sin($M + $F - 2 * $D);
+	$mLat += .00058 * sin($F + 2 * $D);
+	$mLat += .00030 * sin(2 * $M + $F);
+      }
+
+      $mLon -= .02224 * sin($M - 2 * $D);
+      $mLon += .0115 * sin(2 * $D);
+      $mLon -= .00325 * sin($Ms);
+      if ($accuracy > 2) {
+	$mLon -= .0010 * sin(2 * $M - 2 * $D);
+	$mLon -= .00099 * sin($M - 2 * $D + $Ms);
+	$mLon += .00093 * sin($M + 2 * $D);
+	$mLon += .00080 * sin(2 * $D - $Ms);
+	$mLon += .00072 * sin($M - $Ms);
+	$mLon -= .00061 * sin($D);
+	$mLon -= .00054 * sin($M + $Ms);
+	$mLon -= .00026 * sin(2 * $F - 2 * $D);
+	$mLon += .00019 * sin($M - 4 * $D);
+      }
+
+      $r -= 0.58 * cos($M - 2 * $D) + 0.46 * cos(2 * $D);
+
+      $xg = $r * cos($mLon) * cos($mLat);
+      $yg = $r * sin($mLon) * cos($mLat);
+      $zg = $r * sin($mLat);
+    }
+
+    $ecl = self::earthObl1 + self::earthObl2 * $T;
+
+    $xe = $xg;
+    $ye = $yg * cos($ecl) - $zg * sin($ecl);
+    $ze = $yg * sin($ecl) + $zg * cos($ecl);
+
+    $RA = atan2($ye, $xe);
+    $Dec = atan2($ze, sqrt($xe * $xe + $ye * $ye));
+    $HA = deg2rad($this->meanSiderealTime($time) * 15) - $RA;
+    $B = deg2rad($this->latitude);
+
+    // Azimuth
+    $A = rad2deg(atan2(-sin($HA), tan($Dec) * cos($B) - sin($B) * cos($HA)));
+
+    // Azimuth is not negative
+    $A += ($A < 0) * 360;
+
+    return $A;
   }
 
   private function eot($time) {
@@ -574,12 +677,6 @@ NULL)) {
     return atan2($rad2, $rad1);
   }
 
-  // Notes ====================================================================
-
-  /*
-
-   */
-
   // Todo =====================================================================
 
   /*
@@ -589,4 +686,13 @@ NULL)) {
    - Calculate sun visibility
    - Improve documentation, especially for doxygen
    */
+
+  // Notes ====================================================================
+
+  /*
+
+   */
+
+  // Other junk ===============================================================
+
 }
