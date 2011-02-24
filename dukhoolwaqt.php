@@ -303,6 +303,7 @@ NULL)) {
     !is_int($time) ? $time = time() : NULL;
     $basetime = $this->basetime($time);
     $midnight = $this->midnight($basetime);
+    $midnight1 = $this->midnight($basetime + 86400);
     $dhohr = $this->dhohr($basetime);
     $latitude = $this->latitude;
 
@@ -338,7 +339,7 @@ NULL)) {
 	$dhohr + atan($this->calcSettings['angle']['asr'] + 1) / M_PI * 43200,
 	$dhohr + (90 - self::sunset) * 240,
 	$dhohr + (90 - $this->calcSettings['angle']['isha']) * 240,
-	$midnight,
+	$midnight1,
       );
     }
     else {
@@ -350,7 +351,7 @@ NULL)) {
         $this->asr($basetime),
         $this->maghrib($basetime),
         $this->isha($basetime),
-	$midnight,
+	$midnight1,
       );
     }
     $this->latitude = $latitude;
