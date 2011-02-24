@@ -338,6 +338,7 @@ NULL)) {
 	$dhohr + atan($this->calcSettings['angle']['asr'] + 1) / M_PI * 43200,
 	$dhohr + (90 - self::sunset) * 240,
 	$dhohr + (90 - $this->calcSettings['angle']['isha']) * 240,
+	$midnight,
       );
     }
     else {
@@ -349,6 +350,7 @@ NULL)) {
         $this->asr($basetime),
         $this->maghrib($basetime),
         $this->isha($basetime),
+	$midnight,
       );
     }
     $this->latitude = $latitude;
