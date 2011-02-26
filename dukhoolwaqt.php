@@ -130,7 +130,7 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
   }
 
   function setTimeZone($zone = NULL) {
-    if ($zone <= 12 && $zone >= -12) {
+    if ($zone <= 15 && $zone >= -13) {
       $this->timeZone = $zone;
     }
     else {
