@@ -320,26 +320,26 @@ NULL)) {
     if ($nightLat > $lower || $dayLat < $upper) {
       $adjust = max($nightLat - $lower, $upper - $dayLat);
       if (abs($latitude) < $adjust) {
-	$fallback = TRUE;
+        $fallback = TRUE;
       }
       else {
-	$adjust *= ($latitude > 0) ? 1 : -1;
-	$this->latitude -= $adjust;
-	$fallback = ($this->sunAltitude($midnight) - $lower > self::errorMargin
+        $adjust *= ($latitude > 0) ? 1 : -1;
+        $this->latitude -= $adjust;
+        $fallback = ($this->sunAltitude($midnight) - $lower > self::errorMargin
 || $upper - $this->sunAltitude($dhohr) > self::errorMargin);
       }
     }
 
     if ($fallback) {
       $times = array(
-	$basetime,
-	$dhohr - (90 - $this->calcSettings['angle']['fajr']) * 240,
-	$dhohr - (90 - self::sunset) * 240,
-	$dhohr,
-	$dhohr + atan($this->calcSettings['angle']['asr'] + 1) / M_PI * 43200,
-	$dhohr + (90 - self::sunset) * 240,
-	$dhohr + (90 - $this->calcSettings['angle']['isha']) * 240,
-	$midnight1,
+        $basetime,
+        $dhohr - (90 - $this->calcSettings['angle']['fajr']) * 240,
+        $dhohr - (90 - self::sunset) * 240,
+        $dhohr,
+        $dhohr + atan($this->calcSettings['angle']['asr'] + 1) / M_PI * 43200,
+        $dhohr + (90 - self::sunset) * 240,
+        $dhohr + (90 - $this->calcSettings['angle']['isha']) * 240,
+        $midnight1,
       );
     }
     else {
@@ -351,7 +351,7 @@ NULL)) {
         $this->asr($basetime),
         $this->maghrib($basetime),
         $this->isha($basetime),
-	$midnight1,
+        $midnight1,
       );
     }
     $this->latitude = $latitude;
@@ -500,9 +500,9 @@ NULL)) {
 
     if ($accuracy > 0) {
       for ($z = 0; $z < 9 && (abs($delta) > 0.000001 || !isset($delta)); $z++) {
-	$delta = $E - $e * sin($E) - $M;
-	$delta /= 1 - $e * cos($E);
-	$E -= $delta;
+        $delta = $E - $e * sin($E) - $M;
+        $delta /= 1 - $e * cos($E);
+        $E -= $delta;
       }
     }
 
@@ -532,25 +532,25 @@ NULL)) {
 
       $mLat -= .003019 * sin($F - 2 * $D);
       if ($accuracy > 2) {
-	$mLat -= .00096 * sin($M - $F - 2 * $D);
-	$mLat -= .00080 * sin($M + $F - 2 * $D);
-	$mLat += .00058 * sin($F + 2 * $D);
-	$mLat += .00030 * sin(2 * $M + $F);
+        $mLat -= .00096 * sin($M - $F - 2 * $D);
+        $mLat -= .00080 * sin($M + $F - 2 * $D);
+        $mLat += .00058 * sin($F + 2 * $D);
+        $mLat += .00030 * sin(2 * $M + $F);
       }
 
       $mLon -= .02224 * sin($M - 2 * $D);
       $mLon += .0115 * sin(2 * $D);
       $mLon -= .00325 * sin($Ms);
       if ($accuracy > 2) {
-	$mLon -= .0010 * sin(2 * $M - 2 * $D);
-	$mLon -= .00099 * sin($M - 2 * $D + $Ms);
-	$mLon += .00093 * sin($M + 2 * $D);
-	$mLon += .00080 * sin(2 * $D - $Ms);
-	$mLon += .00072 * sin($M - $Ms);
-	$mLon -= .00061 * sin($D);
-	$mLon -= .00054 * sin($M + $Ms);
-	$mLon -= .00026 * sin(2 * $F - 2 * $D);
-	$mLon += .00019 * sin($M - 4 * $D);
+        $mLon -= .0010 * sin(2 * $M - 2 * $D);
+        $mLon -= .00099 * sin($M - 2 * $D + $Ms);
+        $mLon += .00093 * sin($M + 2 * $D);
+        $mLon += .00080 * sin(2 * $D - $Ms);
+        $mLon += .00072 * sin($M - $Ms);
+        $mLon -= .00061 * sin($D);
+        $mLon -= .00054 * sin($M + $Ms);
+        $mLon -= .00026 * sin(2 * $F - 2 * $D);
+        $mLon += .00019 * sin($M - 4 * $D);
       }
 
       $r -= 0.58 * cos($M - 2 * $D) + 0.46 * cos(2 * $D);
