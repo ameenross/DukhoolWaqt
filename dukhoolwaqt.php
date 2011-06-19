@@ -379,7 +379,7 @@ NULL)) {
     $angle = deg2rad(self::sunset);
     $shurooq -= $this->sunTime($angle, $shurooq);
     $shurooq -= $this->eot($shurooq);
-   return $shurooq;
+    return $shurooq;
   }
 
   private function dhohr($basetime) {
@@ -499,7 +499,8 @@ NULL)) {
     $E = $M + $e * sin($M) * (1 + $e * cos($M));
 
     if ($accuracy > 0) {
-      for ($z = 0; $z < 9 && (abs($delta) > 0.000001 || !isset($delta)); $z++) {
+      $delta = 1;
+      for ($z = 0; $z < 9 && (abs($delta) > 0.000001); $z++) {
         $delta = $E - $e * sin($E) - $M;
         $delta /= 1 - $e * cos($E);
         $E -= $delta;
@@ -684,7 +685,6 @@ NULL)) {
 
   /*
    - Correct times for high latency
-   - Calculate moon azimuth
    - Calculate moon visibility
    - Calculate sun visibility
    - Improve documentation, especially for doxygen
