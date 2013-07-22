@@ -6,11 +6,18 @@
  * @TODO
  * - Further restructuring of the code.
  * - Documentation.
- * - Correct times for high latency.
+ * - Correct times for high latitude.
  * - Fix moon azimuth calculation.
  * - Calculate moon elevation.
  * - Functions to return the horizontal coordinates of the sun and the moon.
  * - Calculate moon illumination.
+ * - Figure out whether the algorithms implemented use JD(TT), JD(UT1) or else.
+ * - Figure out how to properly convert from:
+ *   - Unix time ->
+ *   - UTC ->
+ *   - UT1 ->
+ *   - TT
+ * - Add tests.
  */
 
 /**
@@ -19,34 +26,57 @@
 class DukhoolWaqtBase {
   // Constants ================================================================
 
-  // Ka'aba geographical coordinates
+  /**
+   * Geographical latitude of the Ka'aba, in degrees.
+   */
   const kaabaLat = 21.422517;
+
+  /**
+   * Geographical longitude of the Ka'aba, in degrees.
+   */
   const kaabaLng = 39.826166;
 
+  // @TODO: Remove default location functionality.
   // Default location coordinates & timezone (Masjid An-Nabawi)
   const defaultLat = 24.494647;
   const defaultLng = 39.770508;
   const defaultZone = 3; // GMT + 3
 
-  // The sun's altitude at sunrise and sunset
+  /**
+   * The sun's altitude at sunrise and sunset, in degrees.
+   */
   const sunset = -0.8333;
 
+  // @TODO: Extreme latitude adjustment code needs to be redone.
   // Extreme latitudes adjustment constants
   const overhead = 0.05;
   const latitudeUpper = 0;
   const errorMargin = .1;
 
-  // Used to compute sidereal time
+  /**
+   * Used to compute sidereal time.
+   * @TODO: These constants are used only once, remove.
+   * http://aa.usno.navy.mil/faq/docs/GAST.php
+   */
   const earthSrt1 = 6.697374558;
   const earthSrt2 = 0.06570982441908;
   const earthSrt3 = 1.002737909350795;
   const earthSrt4 = 0.000026;
 
-  // Used to compute obliquity of the ecliptic
+  /**
+   * Used to compute obliquity of the ecliptic
+   *
+   * @TODO: Make a function for this, and update to more precise algorithm.
+   * @see: http://en.wikipedia.org/wiki/Axial_tilt
+   */
   const earthObl1 = 0.40909;
   const earthObl2 = -0.0002295;
 
-  // Used to compute the sun's mean longitude, anomaly and equation of center
+  /**
+   * Used to compute the sun's mean longitude, anomaly and equation of center.
+   *
+   * @TODO: Add a function to calculate Sun's mean longitude. Remove constants.
+   */
   const sunLng1 = 4.89506;
   const sunLng2 = 628.33197;
   const sunAno1 = 6.24006;
@@ -55,20 +85,91 @@ class DukhoolWaqtBase {
   const sunCenter2 = -0.0000873;
   const sunCenter3 = 0.000349;
 
-  // Epochs in Julian date (difference between UTC and TT is assumed constant)
-  const unixEpochJD = 2440587.500761306; // Unix epoch (1970/1/1 0:00 UTC)
-  const J2000EpochJD = 2451545; // J2000 epoch (2000/1/1 12:00 TT)
+  /**
+   * Unix epoch in Julian Date.
+   *
+   * The unix epoch (1970/01/01 0:00 UTC) in Julian Date. The difference
+   * between UTC and TT is assumed constant.
+   *
+   * @see: https://en.wikipedia.org/wiki/Unix_time
+   * @see: https://en.wikipedia.org/wiki/Julian_day
+   * @see: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+   * @see: https://en.wikipedia.org/wiki/Terrestrial_Time
+   */
+  const unixEpochJD = 2440587.500761306;
 
-  // Misc constants
+  /**
+   * J2000 epoch in Julian Date.
+   *
+   * The J2000 epoch (2000/01/01 12:00 TT) In Julian Date. The difference
+   * between UTC and TT is assumed constant.
+   *
+   * @see: https://en.wikipedia.org/wiki/Unix_time
+   * @see: https://en.wikipedia.org/wiki/Julian_day
+   * @see: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+   * @see: https://en.wikipedia.org/wiki/Terrestrial_Time
+   */
+  const J2000EpochJD = 2451545;
+
+  /**
+   * Length of a day (Unix time) in seconds.
+   *
+   * @see: http://en.wikipedia.org/wiki/Day
+   * @see: http://en.wikipedia.org/wiki/Unix_time
+   *
+   * @TODO: Use this constant everywhere it occurs.
+   */
+  //const unixDay = 86400;
+
+  /**
+   * The default accuracy.
+   *
+   * @TODO: Remove accuracy logic.
+   */
   const defaultAccuracy = 2;
 
-  // Variables (to set) =======================================================
-
+  /**
+   * Geographical longitude of the location to process.
+   */
   protected $longitude = NULL;
+
+  /**
+   * Geographical latitude of the location to process.
+   */
   protected $latitude = NULL;
+  
+  /**
+   * The timezone (numerical GMT offset) of the location to process.
+   */
   protected $timeZone = NULL;
+
+  /**
+   * An associative array describing the location to be processed.
+   * - longitude: The location's geographical longitude.
+   * - latitude: The location's geographical latitude.
+   * - timezone: The location's named timezone.
+   *
+   * @see: http://php.net/manual/en/timezones.php
+   *
+   * @TODO: Change the API to use this and remove $latitude, $longitude,
+   *   $timeZone.
+   */
+  //public $location = array('longitude' => NULL, 'latitude' => NULL, 'timezone' => '');
+
+  /**
+   * The unix time used for the calculations, when no argument is given.
+   *
+   * @TODO: Make this public and change the API to use this instead of using
+   *   function arguments. Also let it default to time().
+   */
   protected $time = NULL;
 
+  /**
+   * Settings defining the methods and parameters used to determine the prayer
+   * times.
+   *
+   * @TODO: Store these settings differently.
+   */
   protected $calcSettings = array(
     'angle' => array(
       'fajr' => NULL,
@@ -86,25 +187,46 @@ class DukhoolWaqtBase {
     ),
   );
 
+  /**
+   * The ID of the calculation method to use for Fajr & Isha.
+   *
+   * @TODO: See above.
+   */
   protected $methodID = NULL;
 
-  // Quasi constants
+  /**
+   * @TODO: See above.
+   */
   protected $methodName = array('Karachi', 'ISNA', 'MWL', 'Makkah', 'Egypt');
   protected $asrMethodName = array('Shafii', 'Hanafi');
 
-  // Date / time ==============================================================
-
-  // Unix timestamp to Julian date
+  /**
+   * Converts a Unix timestamp to Julian Date.
+   */
   protected function unix2JD($unix) {
     return self::unixEpochJD + $unix / 86400;
   }
 
-  // Julian date to Unix timestamp
+  /**
+   * Converts a Julian Date to a Unix timestamp.
+   */
   protected function JD2unix($JD) {
     return 86400 * ($JD - self::unixEpochJD);
   }
 
-  // Get Unix timestamp for 0:00 of the day we want to calculate
+  /**
+   * Determines which day is most appropriate for prayer time calculation.
+   *
+   * This makes sure that prayer times between the last and next midnight will
+   * be calculated, as opposed to simply the prayer times for the current date.
+   * The latter can sometimes cause confusion.
+   *
+   * @param int $time
+   *   The time to use to determine prayer times.
+   *
+   * @return
+   *   The Unix timestamp for 0:00 of the day to calculate prayer times for.
+   */
   protected function basetime($time) {
     $daybegin = floor($time / 86400) * 86400 - $this->timeZone * 3600;
     $midnight1 = $this->midnight($daybegin);
@@ -113,30 +235,78 @@ class DukhoolWaqtBase {
     return $daybegin + 86400 * (($time > $midnight2) - ($time < $midnight1));
   }
 
+  /**
+   * Calculates the time of mean solar noon.
+   *
+   * @param int $basetime
+   *   Unix timestamp of 0:00 of the day of which to determine the mean
+   *   (fictitious) solar midnight.
+   *
+   * @return
+   *   The Unix timestamp of mean solar noon.
+   *
+   * @see: http://en.wikipedia.org/wiki/Equation_of_time
+   */
   protected function midday($basetime) {
     return $basetime + (180 + $this->timeZone * 15 - $this->longitude) * 240;
   }
 
+  /**
+   * Calculates the time of apparent solar midnight.
+   *
+   * @param int $basetime
+   *   Unix timestamp of 0:00 of the day of which to determine the apparent
+   *   (or true) solar midnight.
+   *
+   * @return
+   *   The Unix timestamp of apparent solar midnight.
+   *
+   * @see: http://en.wikipedia.org/wiki/Equation_of_time
+   */
   protected function midnight($basetime) {
     $midnight = $basetime + ($this->timeZone * 15 - $this->longitude) * 240;
     return $midnight - $this->eot($midnight);
   }
 
-  // Arithmetic ===============================================================
-
-  // Result is always a positive number
-  protected function frac($float) {
-    return $float - floor($float);
+  /**
+   * Cotangent
+   *
+   * Returns the cotangent of the $arg parameter.
+   *
+   * @param float $arg
+   *   A value in radians.
+   *
+   * @return
+   *   The cotangent of $arg.
+   *
+   * @see http://php.net/manual/en/function.tan.php
+   */
+  protected function cot($arg) {
+    return tan(M_PI_2 - $arg);
   }
 
-  // Trigonometry =============================================================
-
-  protected function cot($rad) {
-    return tan(M_PI_2 - $rad);
-  }
-
-  protected function acot2($rad1, $rad2 = 1) {
-    return atan2($rad2, $rad1);
+  /**
+   * Arc cotangent of two variables
+   *
+   * This function calculates the arc cotangent of the two variables $x and $y.
+   * It is similar to calculating the arc cotangent of $y / $x, except that the
+   * signs of both arguments are used to determine the quadrant of the result.
+   *
+   * The function returns the result in radians, which is between -PI and PI
+   * (inclusive).
+   *
+   * @param float $y
+   *   Dividend parameter.
+   * @param float $x
+   *   Divisor parameter.
+   *
+   * @return
+   *   The arc cotangent of $y/$x in radians.
+   *
+   * @see http://php.net/manual/en/function.atan2.php
+   */
+  protected function acot2($y, $x) {
+    return atan2($x, $y);
   }
 }
 
@@ -433,7 +603,7 @@ NULL)) {
     $asr = $this->midday($basetime);
     $D = $this->declination($asr);
     $F = $this->calcSettings['angle']['asr'] + 1;
-    $angle = $this->acot2($F + tan(deg2rad($this->latitude) - $D));
+    $angle = $this->acot2($F + tan(deg2rad($this->latitude) - $D), 1);
     $asr += $this->sunTime($angle, $asr);
     $asr -= $this->eot($asr);
     return $asr;
@@ -642,7 +812,7 @@ NULL)) {
   protected function meanSiderealTime($time) {
     $D = $this->unix2JD($time) - self::J2000EpochJD;
 
-    $Do = floor($D) - 0.5 + ($this->frac($D) >= 0.5);
+    $Do = -round(-$D) - 0.5;
     $tUT = 24 * ($D - $Do);
     $T = $D / 36525;
     $S = self::earthSrt1 + self::earthSrt2 * $Do + self::earthSrt3 * $tUT +
