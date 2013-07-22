@@ -1,34 +1,22 @@
 <?php
-  // $Id$
-
-  /*
-   Copyright 2011 Ameen Ross, <http://www.dukhoolwaqt.org>
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  */
-
-
-  /**
-   * @file
-   * A class library to calculate Islamic prayer times, qibla and more.
-   */
+/**
+ * @file
+ * A class library to calculate Islamic prayer times, qibla and more.
+ *
+ * @TODO
+ * - Further restructuring of the code.
+ * - Documentation.
+ * - Correct times for high latency.
+ * - Fix moon azimuth calculation.
+ * - Calculate moon elevation.
+ * - Functions to return the horizontal coordinates of the sun and the moon.
+ * - Calculate moon illumination.
+ */
 
 /**
- * Implementation of a prayer time calculation algorithm.
+ * Base class for DukhoolWaqt, containing constants and basic functions.
  */
-class DukhoolWaqt {
-
+class DukhoolWaqtBase {
   // Constants ================================================================
 
   // Ka'aba geographical coordinates
@@ -76,12 +64,12 @@ class DukhoolWaqt {
 
   // Variables (to set) =======================================================
 
-  private $longitude = NULL;
-  private $latitude = NULL;
-  private $timeZone = NULL;
-  private $time = NULL;
+  protected $longitude = NULL;
+  protected $latitude = NULL;
+  protected $timeZone = NULL;
+  protected $time = NULL;
 
-  private $calcSettings = array(
+  protected $calcSettings = array(
     'angle' => array(
       'fajr' => NULL,
       'asr' => NULL, // A factor rather than an angle, here for convenience
@@ -98,11 +86,64 @@ class DukhoolWaqt {
     ),
   );
 
-  private $methodID = NULL;
+  protected $methodID = NULL;
 
   // Quasi constants
-  private $methodName = array('Karachi', 'ISNA', 'MWL', 'Makkah', 'Egypt');
-  private $asrMethodName = array('Shafii', 'Hanafi');
+  protected $methodName = array('Karachi', 'ISNA', 'MWL', 'Makkah', 'Egypt');
+  protected $asrMethodName = array('Shafii', 'Hanafi');
+
+  // Date / time ==============================================================
+
+  // Unix timestamp to Julian date
+  protected function unix2JD($unix) {
+    return self::unixEpochJD + $unix / 86400;
+  }
+
+  // Julian date to Unix timestamp
+  protected function JD2unix($JD) {
+    return 86400 * ($JD - self::unixEpochJD);
+  }
+
+  // Get Unix timestamp for 0:00 of the day we want to calculate
+  protected function basetime($time) {
+    $daybegin = floor($time / 86400) * 86400 - $this->timeZone * 3600;
+    $midnight1 = $this->midnight($daybegin);
+    $midnight2 = $this->midnight($daybegin + 86400);
+
+    return $daybegin + 86400 * (($time > $midnight2) - ($time < $midnight1));
+  }
+
+  protected function midday($basetime) {
+    return $basetime + (180 + $this->timeZone * 15 - $this->longitude) * 240;
+  }
+
+  protected function midnight($basetime) {
+    $midnight = $basetime + ($this->timeZone * 15 - $this->longitude) * 240;
+    return $midnight - $this->eot($midnight);
+  }
+
+  // Arithmetic ===============================================================
+
+  // Result is always a positive number
+  protected function frac($float) {
+    return $float - floor($float);
+  }
+
+  // Trigonometry =============================================================
+
+  protected function cot($rad) {
+    return tan(M_PI_2 - $rad);
+  }
+
+  protected function acot2($rad1, $rad2 = 1) {
+    return atan2($rad2, $rad1);
+  }
+}
+
+/**
+ * Implementation of a prayer time calculation algorithm.
+ */
+class DukhoolWaqt extends DukhoolWaqtBase {
 
   // Constructor ==============================================================
 
@@ -366,7 +407,7 @@ NULL)) {
 
   // Prayer times =============================================================
 
-  private function fajr($basetime) {
+  protected function fajr($basetime) {
     $fajr = $this->midday($basetime);
     $angle = deg2rad($this->calcSettings['angle']['fajr']);
     $fajr -= $this->sunTime($angle, $fajr);
@@ -374,7 +415,7 @@ NULL)) {
     return $fajr;
   }
 
-  private function shurooq($basetime) {
+  protected function shurooq($basetime) {
     $shurooq = $this->midday($basetime);
     $angle = deg2rad(self::sunset);
     $shurooq -= $this->sunTime($angle, $shurooq);
@@ -382,13 +423,13 @@ NULL)) {
     return $shurooq;
   }
 
-  private function dhohr($basetime) {
+  protected function dhohr($basetime) {
     $dhohr = $this->midday($basetime);
     $dhohr -= $this->eot($dhohr);
     return $dhohr;
   }
 
-  private function asr($basetime) {
+  protected function asr($basetime) {
     $asr = $this->midday($basetime);
     $D = $this->declination($asr);
     $F = $this->calcSettings['angle']['asr'] + 1;
@@ -398,7 +439,7 @@ NULL)) {
     return $asr;
   }
 
-  private function maghrib($basetime) {
+  protected function maghrib($basetime) {
     $maghrib = $this->midday($basetime);
     $angle = deg2rad(self::sunset);
     $maghrib += $this->sunTime($angle, $maghrib);
@@ -406,7 +447,7 @@ NULL)) {
     return $maghrib;
   }
 
-  private function isha($basetime) {
+  protected function isha($basetime) {
     $isha = $this->midday($basetime);
     $angle = deg2rad($this->calcSettings['angle']['isha']);
     $isha += $this->sunTime($angle, $isha);
@@ -417,7 +458,7 @@ NULL)) {
 
   // Astronomy ================================================================
 
-  private function qiblaAzimuth() {
+  protected function qiblaAzimuth() {
     $A = deg2rad(self::kaabaLng - $this->longitude);
     $b = deg2rad(90 - $this->latitude);
     $c = deg2rad(90 - self::kaabaLat);
@@ -430,7 +471,7 @@ NULL)) {
     return $C;
   }
 
-  private function sunAzimuth($time) {
+  protected function sunAzimuth($time) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
 
     // Solar coordinates
@@ -451,7 +492,7 @@ NULL)) {
     return $A;
   }
 
-  private function sunAltitude($time) {
+  protected function sunAltitude($time) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
 
     // Solar coordinates
@@ -468,7 +509,7 @@ NULL)) {
     return $h;
   }
 
-  private function sunTime($angle, $time) {
+  protected function sunTime($angle, $time) {
     $B = deg2rad($this->latitude);
     $sunTime = 0;
     for ($i = 0; $i < 2; $i++) { // 2 iterations are much more accurate than 1
@@ -479,7 +520,7 @@ NULL)) {
     return $sunTime;
   }
 
-  private function moonAzimuth($time, $accuracy) {
+  protected function moonAzimuth($time, $accuracy) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
     $d = $this->unix2JD($time) - self::J2000EpochJD;
     $T = ($d + 1.5) / 36525; //We must do this due to an error in the algorithm
@@ -581,7 +622,7 @@ NULL)) {
     return $A;
   }
 
-  private function eot($time) {
+  protected function eot($time) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
 
     // Solar coordinates
@@ -598,7 +639,7 @@ NULL)) {
     return $deltaT;
   }
 
-  private function meanSiderealTime($time) {
+  protected function meanSiderealTime($time) {
     $D = $this->unix2JD($time) - self::J2000EpochJD;
 
     $Do = floor($D) - 0.5 + ($this->frac($D) >= 0.5);
@@ -610,7 +651,7 @@ NULL)) {
     return $S;
   }
 
-  private function declination($time) {
+  protected function declination($time) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
     $K = self::earthObl1 + self::earthObl2 * $T;
     $Ls = $this->sunTrueLongitude($T);
@@ -618,14 +659,14 @@ NULL)) {
     return $Ds;
   }
 
-  private function rightAscension($T) {
+  protected function rightAscension($T) {
     $Ls = $this->sunTrueLongitude($T);
     $K = self::earthObl1 + self::earthObl2 * $T;
     $Rs = atan(tan($Ls) * cos($K));
     return $Rs;
   }
 
-  private function sunTrueLongitude($T) {
+  protected function sunTrueLongitude($T) {
     $Lo = self::sunLng1 + self::sunLng2 * $T;
     $Mo = self::sunAno1 + self::sunAno2 * $T;
     $C = (self::sunCenter1 + self::sunCenter2 * $T) * sin($Mo) +
@@ -633,69 +674,5 @@ NULL)) {
     $Ls = $Lo + $C;
     return $Ls;
   }
-
-  // Date / time ==============================================================
-
-  // Unix timestamp to Julian date
-  private function unix2JD($unix) {
-    return self::unixEpochJD + $unix / 86400;
-  }
-
-  // Julian date to Unix timestamp
-  private function JD2unix($JD) {
-    return 86400 * ($JD - self::unixEpochJD);
-  }
-
-  // Get Unix timestamp for 0:00 of the day we want to calculate
-  private function basetime($time) {
-    $daybegin = floor($time / 86400) * 86400 - $this->timeZone * 3600;
-    $midnight1 = $this->midnight($daybegin);
-    $midnight2 = $this->midnight($daybegin + 86400);
-
-    return $daybegin + 86400 * (($time > $midnight2) - ($time < $midnight1));
-  }
-
-  private function midday($basetime) {
-    return $basetime + (180 + $this->timeZone * 15 - $this->longitude) * 240;
-  }
-
-  private function midnight($basetime) {
-    $midnight = $basetime + ($this->timeZone * 15 - $this->longitude) * 240;
-    return $midnight - $this->eot($midnight);
-  }
-
-  // Arithmetic ===============================================================
-
-  // Result is always a positive number
-  private function frac($float) {
-    return $float - floor($float);
-  }
-
-  // Trigonometry =============================================================
-
-  private function cot($rad) {
-    return tan(M_PI_2 - $rad);
-  }
-
-  private function acot2($rad1, $rad2 = 1) {
-    return atan2($rad2, $rad1);
-  }
-
-  // Todo =====================================================================
-
-  /*
-   - Correct times for high latency
-   - Calculate moon visibility
-   - Calculate sun visibility
-   - Improve documentation, especially for doxygen
-   */
-
-  // Notes ====================================================================
-
-  /*
-
-   */
-
-  // Other junk ===============================================================
-
 }
+
