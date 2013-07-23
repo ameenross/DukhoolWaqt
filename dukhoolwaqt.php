@@ -881,7 +881,7 @@ NULL)) {
     // Equation of time
     $deltaT = ($Lo - $Rs);
     // -PI <= deltaT < PI
-    $deltaT -= floor(($deltaT + M_PI) / M_PI / 4) * 4 * M_PI;
+    $deltaT -= floor(($deltaT + M_PI) / M_PI / 2) * 2 * M_PI;
     // Convert radians to seconds
     $deltaT *= 43200 / M_PI;
 
