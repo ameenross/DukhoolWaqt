@@ -24,7 +24,6 @@
  * Base class for DukhoolWaqt, containing constants and basic functions.
  */
 class DukhoolWaqtBase {
-  // Constants ================================================================
 
   /**
    * Geographical latitude of the Ka'aba, in degrees.
@@ -47,12 +46,6 @@ class DukhoolWaqtBase {
    */
   const sunset = -0.8333;
 
-  // @TODO: Extreme latitude adjustment code needs to be redone.
-  // Extreme latitudes adjustment constants
-  const overhead = 0.05;
-  const latitudeUpper = 0;
-  const errorMargin = .1;
-
   /**
    * Used to compute sidereal time.
    * @TODO: These constants are used only once, remove.
@@ -67,7 +60,7 @@ class DukhoolWaqtBase {
    * Used to compute obliquity of the ecliptic
    *
    * @TODO: Make a function for this, and update to more precise algorithm.
-   * @see: http://en.wikipedia.org/wiki/Axial_tilt
+   * @see: https://en.wikipedia.org/wiki/Axial_tilt
    */
   const earthObl1 = 0.40909;
   const earthObl2 = -0.0002295;
@@ -114,8 +107,8 @@ class DukhoolWaqtBase {
   /**
    * Length of a day (Unix time) in seconds.
    *
-   * @see: http://en.wikipedia.org/wiki/Day
-   * @see: http://en.wikipedia.org/wiki/Unix_time
+   * @see: https://en.wikipedia.org/wiki/Day
+   * @see: https://en.wikipedia.org/wiki/Unix_time
    *
    * @TODO: Use this constant everywhere it occurs.
    */
@@ -245,7 +238,7 @@ class DukhoolWaqtBase {
    * @return
    *   The Unix timestamp of mean solar noon.
    *
-   * @see: http://en.wikipedia.org/wiki/Equation_of_time
+   * @see: https://en.wikipedia.org/wiki/Equation_of_time
    */
   protected function midday($basetime) {
     return $basetime + (180 + $this->timeZone * 15 - $this->longitude) * 240;
@@ -261,7 +254,7 @@ class DukhoolWaqtBase {
    * @return
    *   The Unix timestamp of apparent solar midnight.
    *
-   * @see: http://en.wikipedia.org/wiki/Equation_of_time
+   * @see: https://en.wikipedia.org/wiki/Equation_of_time
    */
   protected function midnight($basetime) {
     $midnight = $basetime + ($this->timeZone * 15 - $this->longitude) * 240;
@@ -315,8 +308,11 @@ class DukhoolWaqtBase {
  */
 class DukhoolWaqt extends DukhoolWaqtBase {
 
-  // Constructor ==============================================================
-
+  /**
+   * Creates a new DukhoolWaqt object.
+   *
+   * @TODO: Change API.
+   */
   function __construct($lat = NULL, $lng = NULL, $zone = NULL, $method = NULL,
 $asrMethod = NULL, $adjustMins = array(NULL, NULL, NULL, NULL, NULL, NULL)) {
     $this->setLocation($lat, $lng);
@@ -326,8 +322,11 @@ $asrMethod = NULL, $adjustMins = array(NULL, NULL, NULL, NULL, NULL, NULL)) {
     $this->setAdjustMins($adjustMins);
   }
 
-  // Set functions ============================================================
-
+  /**
+   * Sets the location.
+   *
+   * @TODO: Remove in favor of $this->location.
+   */
   function setLocation($lat = NULL, $lng = NULL) {
     if (is_numeric($lat) && is_numeric($lng) &&
 $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
@@ -340,6 +339,11 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     }
   }
 
+  /**
+   * Sets the timezone.
+   *
+   * @TODO: Remove in favor of $this->location.
+   */
   function setTimeZone($zone = NULL) {
     if ($zone <= 15 && $zone >= -13) {
       $this->timeZone = $zone;
@@ -349,6 +353,12 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     }
   }
 
+  /**
+   * Sets the calculation method for Fajr and Isha.
+   *
+   * @TODO: Remove in favor of $this->options. Need to think of a way to set
+   *   calculation method by their name.
+   */
   function setMethod($method = NULL) {
 
     if (is_null($method)) {
@@ -402,6 +412,12 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     }
   }
 
+  /**
+   * Sets the calculation method for Asr.
+   *
+   * @TODO: Remove in favor of $this->options. Need to think of a way to set
+   *   calculation method by their name.
+   */
   function setAsrMethod($asrMethod = NULL) {
     if (is_null($asrMethod)) {
       $asrMethodID = 0;
@@ -425,6 +441,11 @@ $lat < 90 && $lat > -90 && $lng < 180 && $lng >= -180) {
     $this->calcSettings['angle']['asr'] = $asrMethodID;
   }
 
+  /**
+   * Sets adjustments to prayer times.
+   *
+   * @TODO: Remove in favor of $this->options.
+   */
   function setAdjustMins($adjustMins = array(NULL, NULL, NULL, NULL, NULL,
 NULL)) {
     if (is_array($adjustMins)) {
@@ -456,179 +477,97 @@ NULL)) {
     $settings = array_combine(array_keys($settings), $adjustMins);
   }
 
-  // Get functions (basic) ====================================================
-
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getLocation() {
     return array($this->latitude, $this->longitude);
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getLatitude() {
     return $this->latitude;
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getLongitude() {
     return $this->longitude;
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getTimeZone() {
     return $this->timeZone;
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getMethod() {
     return $this->methodName[$this->methodID];
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getMethodID() {
     return $this->methodID;
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getAsrMethod() {
     return $this->asrMethodName[$this->calcSettings['angle']['asr']];
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getAsrMethodID() {
     return $this->calcSettings['angle']['asr'];
   }
 
+  /**
+   * Get function.
+   *
+   * @TODO: Remove.
+   */
   function getAdjustMins() {
     return array_values($this->calcSettings['adjustMins']);
   }
 
-  // Get functions (real deal) ================================================
-
+  /**
+   * Calculates the Qibla direction.
+   *
+   * @return
+   *   Returns the cardinal direction to the Ka'aba (Qibla) in degrees.
+   *
+   * @see: https://en.wikipedia.org/wiki/Qibla
+   * @see: https://en.wikipedia.org/wiki/Cardinal_direction
+   */
   function getQibla() {
-    return $this->qiblaAzimuth();
-  }
-
-  function getSunAzimuth($time = NULL) {
-    !is_int($time) ? $time = time() : NULL;
-    return $this->sunAzimuth($time);
-  }
-
-  function getMoonAzimuth($time = NULL) {
-    !is_int($time) ? $time = time() : NULL;
-    return $this->moonAzimuth($time, self::defaultAccuracy);
-  }
-
-  function getTimes($time = NULL) {
-    !is_int($time) ? $time = time() : NULL;
-    $basetime = $this->basetime($time);
-    $midnight = $this->midnight($basetime);
-    $midnight1 = $this->midnight($basetime + 86400);
-    $dhohr = $this->dhohr($basetime);
-    $latitude = $this->latitude;
-
-    $upper = self::latitudeUpper;
-    $lower = min($this->calcSettings['angle']);
-    $diff = $upper - $lower;
-    $upper += $diff * self::overhead;
-    $lower -= $diff * self::overhead;
-
-    $latitude = $this->latitude;
-    $fallback = FALSE;
-    $nightLat = $this->sunAltitude($midnight);
-    $dayLat = $this->sunAltitude($dhohr);
-    if ($nightLat > $lower || $dayLat < $upper) {
-      $adjust = max($nightLat - $lower, $upper - $dayLat);
-      if (abs($latitude) < $adjust) {
-        $fallback = TRUE;
-      }
-      else {
-        $adjust *= ($latitude > 0) ? 1 : -1;
-        $this->latitude -= $adjust;
-        $fallback = ($this->sunAltitude($midnight) - $lower > self::errorMargin
-|| $upper - $this->sunAltitude($dhohr) > self::errorMargin);
-      }
-    }
-
-    if ($fallback) {
-      $times = array(
-        $basetime,
-        $dhohr - (90 - $this->calcSettings['angle']['fajr']) * 240,
-        $dhohr - (90 - self::sunset) * 240,
-        $dhohr,
-        $dhohr + atan($this->calcSettings['angle']['asr'] + 1) / M_PI * 43200,
-        $dhohr + (90 - self::sunset) * 240,
-        $dhohr + (90 - $this->calcSettings['angle']['isha']) * 240,
-        $midnight1,
-      );
-    }
-    else {
-      $times = array(
-        $basetime,
-        $this->fajr($basetime),
-        $this->shurooq($basetime),
-        $dhohr,
-        $this->asr($basetime),
-        $this->maghrib($basetime),
-        $this->isha($basetime),
-        $midnight1,
-      );
-    }
-    $this->latitude = $latitude;
-
-    $adjustMins = array_values($this->calcSettings['adjustMins']);
-    for ($i = 0; $i < 6; $i++) {
-      $times[$i + 1] += $adjustMins[$i] * 60;
-    }
-
-    return $times;
-  }
-
-  // Prayer times =============================================================
-
-  protected function fajr($basetime) {
-    $fajr = $this->midday($basetime);
-    $angle = deg2rad($this->calcSettings['angle']['fajr']);
-    $fajr -= $this->sunTime($angle, $fajr);
-    $fajr -= $this->eot($fajr);
-    return $fajr;
-  }
-
-  protected function shurooq($basetime) {
-    $shurooq = $this->midday($basetime);
-    $angle = deg2rad(self::sunset);
-    $shurooq -= $this->sunTime($angle, $shurooq);
-    $shurooq -= $this->eot($shurooq);
-    return $shurooq;
-  }
-
-  protected function dhohr($basetime) {
-    $dhohr = $this->midday($basetime);
-    $dhohr -= $this->eot($dhohr);
-    return $dhohr;
-  }
-
-  protected function asr($basetime) {
-    $asr = $this->midday($basetime);
-    $D = $this->declination($asr);
-    $F = $this->calcSettings['angle']['asr'] + 1;
-    $angle = $this->acot2($F + tan(deg2rad($this->latitude) - $D), 1);
-    $asr += $this->sunTime($angle, $asr);
-    $asr -= $this->eot($asr);
-    return $asr;
-  }
-
-  protected function maghrib($basetime) {
-    $maghrib = $this->midday($basetime);
-    $angle = deg2rad(self::sunset);
-    $maghrib += $this->sunTime($angle, $maghrib);
-    $maghrib -= $this->eot($maghrib);
-    return $maghrib;
-  }
-
-  protected function isha($basetime) {
-    $isha = $this->midday($basetime);
-    $angle = deg2rad($this->calcSettings['angle']['isha']);
-    $isha += $this->sunTime($angle, $isha);
-    $isha -= $this->eot($isha);
-    $isha += $this->calcSettings['ishaMinutes'] * 60;
-    return $isha;
-  }
-
-  // Astronomy ================================================================
-
-  protected function qiblaAzimuth() {
     $A = deg2rad(self::kaabaLng - $this->longitude);
     $b = deg2rad(90 - $this->latitude);
     $c = deg2rad(90 - self::kaabaLat);
@@ -641,7 +580,16 @@ NULL)) {
     return $C;
   }
 
-  protected function sunAzimuth($time) {
+  /**
+   * Calculates the sun's direction.
+   *
+   * @return
+   *   Returns the azimuth of the sun in degrees.
+   *
+   * @see: https://en.wikipedia.org/wiki/Azimuth
+   */
+  function getSunAzimuth($time = NULL) {
+    !is_int($time) ? $time = time() : NULL;
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
 
     // Solar coordinates
@@ -662,35 +610,18 @@ NULL)) {
     return $A;
   }
 
-  protected function sunAltitude($time) {
-    $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
+  /**
+   * Calculates the moon's direction.
+   *
+   * @return
+   *   Returns the azimuth of the moon in degrees.
+   *
+   * @see: https://en.wikipedia.org/wiki/Azimuth
+   */
+  function getMoonAzimuth($time = NULL) {
+    !is_int($time) ? $time = time() : NULL;
+    $accuracy = self::defaultAccuracy;
 
-    // Solar coordinates
-    $K = self::earthObl1 + self::earthObl2 * $T;
-    $Rs = $this->rightAscension($T);
-
-    // Horizontal coordinates
-    $H = deg2rad($this->meanSiderealTime($time) * 15) - $Rs;
-    $Ds = $this->declination($time);
-    $B = deg2rad($this->latitude);
-
-    $h = rad2deg(asin(sin($B) * sin($Ds) + cos($B) * cos($Ds) * cos($H)));
-
-    return $h;
-  }
-
-  protected function sunTime($angle, $time) {
-    $B = deg2rad($this->latitude);
-    $sunTime = 0;
-    for ($i = 0; $i < 2; $i++) { // 2 iterations are much more accurate than 1
-      $D = $this->declination($time + $sunTime);
-      $sunTime = acos((sin($angle) - sin($D) * sin($B)) / (cos($D) * cos($B)));
-      $sunTime *= 43200 / M_PI;
-    }
-    return $sunTime;
-  }
-
-  protected function moonAzimuth($time, $accuracy) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
     $d = $this->unix2JD($time) - self::J2000EpochJD;
     $T = ($d + 1.5) / 36525; //We must do this due to an error in the algorithm
@@ -792,6 +723,154 @@ NULL)) {
     return $A;
   }
 
+  /**
+   * Calculates the prayer times.
+   *
+   * @TODO: API change.
+   */
+  function getTimes($time = NULL) {
+    !is_int($time) ? $time = time() : NULL;
+    $basetime = $this->basetime($time);
+
+    $times = array(
+      $basetime,
+      $this->fajr($basetime),
+      $this->shurooq($basetime),
+      $this->dhohr($basetime),
+      $this->asr($basetime),
+      $this->maghrib($basetime),
+      $this->isha($basetime),
+      $this->midnight($basetime + 86400),
+    );
+
+    $adjustMins = array_values($this->calcSettings['adjustMins']);
+    for ($i = 0; $i < 6; $i++) {
+      $times[$i + 1] += $adjustMins[$i] * 60;
+    }
+
+    return $times;
+  }
+
+  /**
+   * Calculates the time for fajr.
+   *
+   * @TODO: API change.
+   */
+  protected function fajr($basetime) {
+    $fajr = $this->midday($basetime);
+    $angle = deg2rad($this->calcSettings['angle']['fajr']);
+    $fajr -= $this->sunTime($angle, $fajr);
+    $fajr -= $this->eot($fajr);
+    return $fajr;
+  }
+
+  /**
+   * Calculates the time for shurooq.
+   *
+   * @TODO: API change.
+   */
+  protected function shurooq($basetime) {
+    $shurooq = $this->midday($basetime);
+    $angle = deg2rad(self::sunset);
+    $shurooq -= $this->sunTime($angle, $shurooq);
+    $shurooq -= $this->eot($shurooq);
+    return $shurooq;
+  }
+
+  /**
+   * Calculates the time for dhohr.
+   *
+   * @TODO: API change.
+   */
+  protected function dhohr($basetime) {
+    $dhohr = $this->midday($basetime);
+    $dhohr -= $this->eot($dhohr);
+    return $dhohr;
+  }
+
+  /**
+   * Calculates the time for asr.
+   *
+   * @TODO: API change.
+   */
+  protected function asr($basetime) {
+    $asr = $this->midday($basetime);
+    $D = $this->declination($asr);
+    $F = $this->calcSettings['angle']['asr'] + 1;
+    $angle = $this->acot2($F + tan(deg2rad($this->latitude) - $D), 1);
+    $asr += $this->sunTime($angle, $asr);
+    $asr -= $this->eot($asr);
+    return $asr;
+  }
+
+  /**
+   * Calculates the time for maghrib.
+   *
+   * @TODO: API change.
+   */
+  protected function maghrib($basetime) {
+    $maghrib = $this->midday($basetime);
+    $angle = deg2rad(self::sunset);
+    $maghrib += $this->sunTime($angle, $maghrib);
+    $maghrib -= $this->eot($maghrib);
+    return $maghrib;
+  }
+
+  /**
+   * Calculates the time for isha.
+   *
+   * @TODO: API change.
+   */
+  protected function isha($basetime) {
+    $isha = $this->midday($basetime);
+    $angle = deg2rad($this->calcSettings['angle']['isha']);
+    $isha += $this->sunTime($angle, $isha);
+    $isha -= $this->eot($isha);
+    $isha += $this->calcSettings['ishaMinutes'] * 60;
+    return $isha;
+  }
+
+  /**
+   * Calculates the sun's altitude.
+   *
+   * @see: https://en.wikipedia.org/wiki/Horizontal_coordinate_system
+   */
+  protected function sunAltitude($time) {
+    $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
+
+    // Solar coordinates
+    $K = self::earthObl1 + self::earthObl2 * $T;
+    $Rs = $this->rightAscension($T);
+
+    // Horizontal coordinates
+    $H = deg2rad($this->meanSiderealTime($time) * 15) - $Rs;
+    $Ds = $this->declination($time);
+    $B = deg2rad($this->latitude);
+
+    $h = rad2deg(asin(sin($B) * sin($Ds) + cos($B) * cos($Ds) * cos($H)));
+
+    return $h;
+  }
+
+  /**
+   * Calculates how long it takes for the sun to reach a given altitude.
+   */
+  protected function sunTime($angle, $time) {
+    $B = deg2rad($this->latitude);
+    $sunTime = 0;
+    for ($i = 0; $i < 2; $i++) { // 2 iterations are much more accurate than 1
+      $D = $this->declination($time + $sunTime);
+      $sunTime = acos((sin($angle) - sin($D) * sin($B)) / (cos($D) * cos($B)));
+      $sunTime *= 43200 / M_PI;
+    }
+    return $sunTime;
+  }
+
+  /**
+   * Calculates the equation of time.
+   *
+   * @see: https://en.wikipedia.org/wiki/Equation_of_time
+   */
   protected function eot($time) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
 
@@ -802,13 +881,18 @@ NULL)) {
     // Equation of time
     $deltaT = ($Lo - $Rs);
     // -PI <= deltaT < PI
-    $deltaT -= floor(($deltaT + M_PI) / M_PI / 2) * 2 * M_PI;
+    $deltaT -= floor(($deltaT + M_PI) / M_PI / 4) * 4 * M_PI;
     // Convert radians to seconds
     $deltaT *= 43200 / M_PI;
 
     return $deltaT;
   }
 
+  /**
+   * Calculates the mean sidereal time.
+   *
+   * @see: https://en.wikipedia.org/wiki/Sidereal_time
+   */
   protected function meanSiderealTime($time) {
     $D = $this->unix2JD($time) - self::J2000EpochJD;
 
@@ -821,6 +905,11 @@ NULL)) {
     return $S;
   }
 
+  /**
+   * Calculates the declination of the sun.
+   *
+   * @see: https://en.wikipedia.org/wiki/Declination
+   */
   protected function declination($time) {
     $T = ($this->unix2JD($time) - self::J2000EpochJD) / 36525;
     $K = self::earthObl1 + self::earthObl2 * $T;
@@ -829,13 +918,21 @@ NULL)) {
     return $Ds;
   }
 
+  /**
+   * Calculates the right ascension of the sun.
+   *
+   * @see: https://en.wikipedia.org/wiki/Right_ascension
+   */
   protected function rightAscension($T) {
     $Ls = $this->sunTrueLongitude($T);
     $K = self::earthObl1 + self::earthObl2 * $T;
-    $Rs = atan(tan($Ls) * cos($K));
+    $Rs = atan2(sin($Ls) * cos($K), cos($Ls));
     return $Rs;
   }
 
+  /**
+   * Calculates the sun's true longitude.
+   */
   protected function sunTrueLongitude($T) {
     $Lo = self::sunLng1 + self::sunLng2 * $T;
     $Mo = self::sunAno1 + self::sunAno2 * $T;
